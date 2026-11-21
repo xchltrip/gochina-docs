@@ -31,6 +31,8 @@ A formal tour code is the letter `P` followed by 10 digits. The API returns only
 1. Embed: add `https://api.gochina.cool/embed.js` to a page and pass the Publishable Key. See [Embed a card](/manual/embed/card/).
 2. JSON: exchange the App Secret for a token, then call the tour and price paths from your server. See [Authentication](/manual/authentication/token/), [Read tours](/manual/tours/read/), and [Reference prices](/manual/tours/prices/).
 
+Short answers to the first integration questions are on [Q&A](/manual/qa/questions/).
+
 ## Limits
 
 The price is a reference price per adult for the published party size. It includes the line “Enquire for quote.” Children’s prices are not in the response. The card does not take a booking. v1 has no language parameter and no departure date.

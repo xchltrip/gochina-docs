@@ -25,6 +25,9 @@ export default defineConfig({
       favicon: '/favicon.svg',
       locales: { root: { label: 'English', lang: 'en' } },
       lastUpdated: true,
+      social: [
+        { icon: 'github', label: 'GitHub', href: 'https://github.com/xchltrip/gochina-docs' },
+      ],
       plugins: [starlightLinksValidator()],
       head: [
         { tag: 'meta', attrs: { name: 'build-sha', content: buildSha } },
@@ -34,6 +37,7 @@ export default defineConfig({
       sidebar: [
         { label: 'Glossary', items: [{ autogenerate: { directory: 'manual/glossary' } }] },
         { label: 'Getting started', items: [{ autogenerate: { directory: 'manual/getting-started' } }] },
+        { label: 'Q&A', items: [{ autogenerate: { directory: 'manual/qa' } }] },
         { label: 'Authentication', items: [{ autogenerate: { directory: 'manual/authentication' } }] },
         { label: 'Tours', items: [{ autogenerate: { directory: 'manual/tours' } }] },
         { label: 'Currencies', items: [{ autogenerate: { directory: 'manual/currencies' } }] },
