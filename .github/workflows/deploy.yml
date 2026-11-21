@@ -1,0 +1,114 @@
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SITE_URL: https://docs.gochina.cool
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run check:content
+
+      - name: Build
+        run: npm run build
+        env:
+          PUBLIC_ENV: production
+          PUBLIC_BUILD_SHA: ${{ github.sha }}
+
+      - name: Configure deploy connection
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          missing=""
+          for name in DEPLOY_HOST DEPLOY_PORT DEPLOY_USER DEPLOY_SSH_KEY DEPLOY_KNOWN_HOSTS; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          [ -z "$missing" ] || { echo "::error::Missing secrets:$missing"; exit 1; }
+
+          host=$(printf '%s' "$DEPLOY_HOST" | tr -d '[:space:]')
+          port=$(printf '%s' "$DEPLOY_PORT" | tr -d '[:space:]')
+          user=$(printf '%s' "$DEPLOY_USER" | tr -d '[:space:]')
+
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" | tr -d '\r' > ~/.ssh/deploy_key
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" | tr -d '\r' > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/deploy_key ~/.ssh/known_hosts
+          ssh-keygen -y -f ~/.ssh/deploy_key > /dev/null || { echo "::error::DEPLOY_SSH_KEY is not a valid private key"; exit 1; }
+
+          cat > ~/.ssh/config <<EOF
+          Host deploy-target
+            HostName $host
+            Port $port
+            User $user
+            IdentityFile ~/.ssh/deploy_key
+            IdentitiesOnly yes
+            BatchMode yes
+            ConnectTimeout 20
+            LogLevel ERROR
+          EOF
+          chmod 600 ~/.ssh/config
+
+          echo "Deploy key fingerprint:"
+          ssh-keygen -lf ~/.ssh/deploy_key
+
+      - name: Check server connection
+        run: |
+          out=$(ssh deploy-target "ping" 2>&1) || true
+          case "$out" in
+            *"Host key verification"*) echo "::error::DEPLOY_KNOWN_HOSTS does not match the server"; exit 1 ;;
+            *"Permission denied"*) echo "::error::Deploy key was rejected or DEPLOY_USER is wrong"; exit 1 ;;
+            *"timed out"*|*"Connection refused"*) echo "::error::Cannot reach the SSH port"; exit 1 ;;
+            *pong*) echo "SSH connection is ready" ;;
+            *) echo "::error::SSH check failed"; echo "$out" | sed -E 's/[0-9]{1,3}(\.[0-9]{1,3}){3}/***/g'; exit 1 ;;
+          esac
+
+      - name: Upload release
+        run: rsync -az --timeout=120 -e ssh dist/ "deploy-target:$GITHUB_SHA/"
+
+      - name: Switch live version
+        run: ssh deploy-target "switch $GITHUB_SHA"
+
+      - name: Smoke test
+        run: |
+          for i in $(seq 1 6); do
+            if curl -fsS "$SITE_URL/" | grep -q "$GITHUB_SHA" \
+              && curl -fsS -o /dev/null "$SITE_URL/manual/getting-started/start/" \
+              && curl -fsS -o /dev/null "$SITE_URL/pagefind/pagefind.js"; then
+              echo "The new version is live"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::The new version is not live. Check the server or run rollback."
+          exit 1
+
+      - name: Remove deploy key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key ~/.ssh/config

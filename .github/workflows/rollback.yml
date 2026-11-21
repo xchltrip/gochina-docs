@@ -1,0 +1,81 @@
+name: rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: Full 40-character commit SHA to restore
+        required: true
+
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  rollback:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Validate commit SHA
+        env:
+          TARGET_SHA: ${{ inputs.sha }}
+        run: |
+          [[ "$TARGET_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::The SHA must be 40 lowercase hex characters"; exit 1; }
+
+      - name: Configure deploy connection
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          missing=""
+          for name in DEPLOY_HOST DEPLOY_PORT DEPLOY_USER DEPLOY_SSH_KEY DEPLOY_KNOWN_HOSTS; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          [ -z "$missing" ] || { echo "::error::Missing secrets:$missing"; exit 1; }
+
+          host=$(printf '%s' "$DEPLOY_HOST" | tr -d '[:space:]')
+          port=$(printf '%s' "$DEPLOY_PORT" | tr -d '[:space:]')
+          user=$(printf '%s' "$DEPLOY_USER" | tr -d '[:space:]')
+
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" | tr -d '\r' > ~/.ssh/deploy_key
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" | tr -d '\r' > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/deploy_key ~/.ssh/known_hosts
+          ssh-keygen -y -f ~/.ssh/deploy_key > /dev/null || { echo "::error::DEPLOY_SSH_KEY is not a valid private key"; exit 1; }
+
+          cat > ~/.ssh/config <<EOF
+          Host deploy-target
+            HostName $host
+            Port $port
+            User $user
+            IdentityFile ~/.ssh/deploy_key
+            IdentitiesOnly yes
+            BatchMode yes
+            ConnectTimeout 20
+            LogLevel ERROR
+          EOF
+          chmod 600 ~/.ssh/config
+
+      - name: Check server connection
+        run: |
+          out=$(ssh deploy-target "ping" 2>&1) || true
+          case "$out" in
+            *pong*) echo "SSH connection is ready" ;;
+            *) echo "::error::SSH check failed"; echo "$out" | sed -E 's/[0-9]{1,3}(\.[0-9]{1,3}){3}/***/g'; exit 1 ;;
+          esac
+
+      - name: Switch to the selected version
+        env:
+          TARGET_SHA: ${{ inputs.sha }}
+        run: ssh deploy-target "switch $TARGET_SHA"
+
+      - name: Remove deploy key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key ~/.ssh/config
