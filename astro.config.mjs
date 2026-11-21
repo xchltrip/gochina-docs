@@ -15,6 +15,13 @@ export default defineConfig({
   integrations: [
     starlight({
       title: 'GoChina Open Platform',
+      logo: {
+        light: './src/assets/logo.svg',
+        dark: './src/assets/logo-dark.svg',
+        alt: 'GoChina.cool',
+        replacesTitle: true,
+      },
+      favicon: '/favicon.svg',
       locales: { root: { label: 'English', lang: 'en' } },
       lastUpdated: true,
       plugins: [starlightLinksValidator()],
