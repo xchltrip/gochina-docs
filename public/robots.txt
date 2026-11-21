@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://docs.gochina.cool/sitemap-index.xml

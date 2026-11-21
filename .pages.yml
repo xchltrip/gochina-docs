@@ -1,0 +1,121 @@
+settings:
+  content:
+    merge: true
+  commit:
+    identity: user
+    templates:
+      create: "docs(content): add {path} ({userName})"
+      update: "docs(content): update {path} ({userName})"
+
+media:
+  input: public/images/manual
+  output: /images/manual
+  rename: random
+  categories: [image]
+
+content:
+  - name: manual
+    label: 手册
+    type: group
+    items:
+      - name: glossary
+        label: 术语
+        type: collection
+        path: src/content/docs/manual/glossary
+        format: yaml-frontmatter
+        subfolders: false
+        filename:
+          template: "article-{year}{month}{day}.md"
+          field: create
+        operations: { delete: false, rename: false }
+        view: { primary: title, fields: [title, description] }
+        fields: &docFields
+          - { name: title, label: 标题, type: string, required: true }
+          - { name: description, label: 简介, type: text }
+          - name: sidebar
+            label: 侧边栏
+            type: object
+            fields:
+              - { name: order, label: 排序（数字越小越靠前）, type: number }
+          - name: body
+            label: 正文（Markdown）
+            type: code
+            options: { format: markdown }
+
+      - name: getting-started
+        label: 开始使用
+        type: collection
+        path: src/content/docs/manual/getting-started
+        format: yaml-frontmatter
+        subfolders: false
+        filename:
+          template: "article-{year}{month}{day}.md"
+          field: create
+        operations: { delete: false, rename: false }
+        view: { primary: title, fields: [title, description] }
+        fields: *docFields
+
+      - name: authentication
+        label: 鉴权
+        type: collection
+        path: src/content/docs/manual/authentication
+        format: yaml-frontmatter
+        subfolders: false
+        filename:
+          template: "article-{year}{month}{day}.md"
+          field: create
+        operations: { delete: false, rename: false }
+        view: { primary: title, fields: [title, description] }
+        fields: *docFields
+
+      - name: tours
+        label: 线路
+        type: collection
+        path: src/content/docs/manual/tours
+        format: yaml-frontmatter
+        subfolders: false
+        filename:
+          template: "article-{year}{month}{day}.md"
+          field: create
+        operations: { delete: false, rename: false }
+        view: { primary: title, fields: [title, description] }
+        fields: *docFields
+
+      - name: embed
+        label: 嵌入卡片
+        type: collection
+        path: src/content/docs/manual/embed
+        format: yaml-frontmatter
+        subfolders: false
+        filename:
+          template: "article-{year}{month}{day}.md"
+          field: create
+        operations: { delete: false, rename: false }
+        view: { primary: title, fields: [title, description] }
+        fields: *docFields
+
+      - name: errors
+        label: 错误
+        type: collection
+        path: src/content/docs/manual/errors
+        format: yaml-frontmatter
+        subfolders: false
+        filename:
+          template: "article-{year}{month}{day}.md"
+          field: create
+        operations: { delete: false, rename: false }
+        view: { primary: title, fields: [title, description] }
+        fields: *docFields
+
+      - name: versions
+        label: 版本
+        type: collection
+        path: src/content/docs/manual/versions
+        format: yaml-frontmatter
+        subfolders: false
+        filename:
+          template: "article-{year}{month}{day}.md"
+          field: create
+        operations: { delete: false, rename: false }
+        view: { primary: title, fields: [title, description] }
+        fields: *docFields
