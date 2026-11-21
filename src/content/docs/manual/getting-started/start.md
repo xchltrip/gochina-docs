@@ -17,22 +17,20 @@ Use it when you are ready to show one published tour on your own website. Start 
 
 | Field | Meaning |
 | --- | --- |
-| App ID | Your application id, such as `10001`. |
+| App ID | Your application id, such as `10001`. Send it as a string. |
 | App Secret | Server only. Write it as `your_app_secret` in examples. |
 | Publishable Key | Card only. Write it as `pk_your_publishable_key` in examples. |
 | API base | `https://api.gochina.cool` |
 | Docs | `https://docs.gochina.cool/` |
-| Sample tour code | `P2026110001` |
+| Sample tour code | `P2026110018` |
 
-That sample tour opens at `https://gochina.cool/tours/nujiang-canyon-meili-snow-mountain-6-day-tour/`.
-
-A formal tour code is the letter `P` followed by 10 digits. The API returns only published tours whose code matches that shape. The application must be enabled.
+A formal tour code is the letter `P` followed by 10 digits. The API returns only published tours that use the current itinerary structure. Older tours are absent. The application must be enabled, and the server address must be registered before the first call.
 
 ## Two ways to show the tour
 
-1. Embed: add `/v1/embed.js` to a page and pass the Publishable Key. See [Embed a card](/manual/embed/card/).
-2. JSON: exchange the App Secret for a token, then call `/v1/tours/{code}` from your server. See [Authentication](/manual/authentication/token/) and [Read tours](/manual/tours/read/).
+1. Embed: add `https://api.gochina.cool/embed.js` to a page and pass the Publishable Key. See [Embed a card](/manual/embed/card/).
+2. JSON: exchange the App Secret for a token, then call the tour and price paths from your server. See [Authentication](/manual/authentication/token/), [Read tours](/manual/tours/read/), and [Reference prices](/manual/tours/prices/).
 
 ## Limits
 
-The price is a reference price and includes the line “Enquire for quote.” The card does not take a booking.
+The price is a reference price per adult for the published party size. It includes the line “Enquire for quote.” Children’s prices are not in the response. The card does not take a booking. v1 has no language parameter and no departure date.

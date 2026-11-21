@@ -1,0 +1,164 @@
+openapi: 3.0.3
+info:
+  title: GoChina Open Platform
+  version: v1
+  description: Reference tours and per-adult reference prices. Amounts are decimal strings.
+servers:
+  - url: https://api.gochina.cool
+paths:
+  /v1/token:
+    post:
+      operationId: createToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [grantType]
+              properties:
+                appId: { type: string }
+                appSecret: { type: string }
+                grantType: { type: string, enum: [client_credentials, refresh_token] }
+                refreshToken: { type: string }
+      responses:
+        "200":
+          description: Token issued
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [apiVersion, accessToken, expiresInSeconds, refreshToken, refreshTokenExpiresInSeconds, tokenType]
+                properties:
+                  apiVersion: { type: string, enum: [v1] }
+                  accessToken: { type: string }
+                  expiresInSeconds: { type: integer }
+                  refreshToken: { type: string }
+                  refreshTokenExpiresInSeconds: { type: integer }
+                  tokenType: { type: string, enum: [Bearer] }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unavailable" }
+  /v1/currencies:
+    get:
+      operationId: listCurrencies
+      security: [{ bearer: [] }]
+      responses:
+        "200":
+          description: Convertible currencies
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  apiVersion: { type: string, enum: [v1] }
+                  baseCurrency: { type: string, enum: [USD] }
+                  currencies:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        currency: { $ref: "#/components/schemas/CurrencyCode" }
+                        currencyName: { type: string }
+                        minorUnits: { type: integer }
+  /v1/tours:
+    get:
+      operationId: listTours
+      security: [{ bearer: [] }]
+      parameters:
+        - { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+        - { name: pageSize, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+      responses:
+        "200":
+          description: One page of tours
+  /v1/tours/{tourCode}:
+    get:
+      operationId: readTour
+      security: [{ bearer: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/TourCode" }
+        - { name: If-None-Match, in: header, schema: { type: string } }
+      responses:
+        "200": { description: Tour document without prices }
+        "304": { description: Not modified }
+        "404": { $ref: "#/components/responses/Unavailable" }
+  /v1/tours/{tourCode}/card:
+    get:
+      operationId: readCard
+      security: [{ publishableKey: [] }]
+      parameters:
+        - { $ref: "#/components/parameters/TourCode" }
+        - name: currency
+          in: query
+          schema: { $ref: "#/components/schemas/CurrencyCode" }
+      responses:
+        "200": { description: Retail card. Amount stays in USD. }
+  /v1/prices:
+    get:
+      operationId: readPrices
+      security: [{ bearer: [] }]
+      parameters:
+        - name: tourCode
+          in: query
+          required: true
+          schema: { type: array, maxItems: 100, items: { type: string, pattern: "^P\\d{10}$" } }
+          style: form
+          explode: true
+        - name: currency
+          in: query
+          schema: { type: array, maxItems: 3, items: { $ref: "#/components/schemas/CurrencyCode" } }
+          style: form
+          explode: true
+      responses:
+        "200": { description: Reference prices. Unavailable tours stay in the array. }
+        "400": { $ref: "#/components/responses/BadRequest" }
+components:
+  securitySchemes:
+    bearer:
+      type: http
+      scheme: bearer
+    publishableKey:
+      type: apiKey
+      in: header
+      name: X-Publishable-Key
+  parameters:
+    TourCode:
+      name: tourCode
+      in: path
+      required: true
+      schema: { type: string, pattern: "^P\\d{10}$" }
+  responses:
+    Unavailable:
+      description: Credential, permission, or availability failure
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              apiVersion: { type: string, enum: [v1] }
+              available: { type: boolean, enum: [false] }
+    BadRequest:
+      description: The request is malformed
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              apiVersion: { type: string, enum: [v1] }
+              error:
+                type: string
+                enum:
+                  - invalid_parameter
+                  - invalid_page
+                  - invalid_page_size
+                  - invalid_grant_type
+                  - invalid_tour_code
+                  - too_many_tour_codes
+                  - duplicate_tour_code
+                  - invalid_currency
+                  - unsupported_currency
+                  - too_many_currencies
+                  - duplicate_currency
+  schemas:
+    CurrencyCode:
+      type: string
+      enum: [AED, AUD, CAD, CHF, CNY, EUR, GBP, HKD, IDR, INR, JPY, KRW, MOP, MYR, NZD, PHP, RUB, SAR, SGD, THB, TWD, VND]

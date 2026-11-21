@@ -36,6 +36,7 @@ export default defineConfig({
         { label: 'Getting started', items: [{ autogenerate: { directory: 'manual/getting-started' } }] },
         { label: 'Authentication', items: [{ autogenerate: { directory: 'manual/authentication' } }] },
         { label: 'Tours', items: [{ autogenerate: { directory: 'manual/tours' } }] },
+        { label: 'Currencies', items: [{ autogenerate: { directory: 'manual/currencies' } }] },
         { label: 'Embed', items: [{ autogenerate: { directory: 'manual/embed' } }] },
         { label: 'Errors', items: [{ autogenerate: { directory: 'manual/errors' } }] },
         { label: 'Versions', items: [{ autogenerate: { directory: 'manual/versions' } }] },

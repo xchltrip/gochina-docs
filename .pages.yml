@@ -81,6 +81,19 @@ content:
         view: { primary: title, fields: [title, description] }
         fields: *docFields
 
+      - name: currencies
+        label: 币种
+        type: collection
+        path: src/content/docs/manual/currencies
+        format: yaml-frontmatter
+        subfolders: false
+        filename:
+          template: "article-{year}{month}{day}.md"
+          field: create
+        operations: { delete: false, rename: false }
+        view: { primary: title, fields: [title, description] }
+        fields: *docFields
+
       - name: embed
         label: 嵌入卡片
         type: collection
