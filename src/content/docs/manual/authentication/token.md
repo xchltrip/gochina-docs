@@ -1,41 +1,31 @@
 ---
-title: Access tokens
+title: Authentication
 description: Exchange an App Secret for a bearer token. The Publishable Key is only for the card.
 sidebar:
   order: 1
 ---
 
-## What this page is for
+`POST /v1/token` exchanges an App ID and App Secret for an access token. List, detail, currency, and price requests then send that token as `Authorization: Bearer`. A browser card sends `X-Publishable-Key` instead. The secret is a JSON string in the body, never a query parameter.
 
-`POST /v1/token` turns an App ID and App Secret into an access token. List, detail, currency, and price requests then send that token as a bearer token. A browser card sends a Publishable Key instead. The secret is never placed in a URL.
+Keep the App Secret on your server. `GET /v1/token` does not accept a secret and returns HTTP 401.
 
-## When to use it
+## Parameters
 
-Use the token from your server. Use the Publishable Key only in the page that loads `embed.js`. Keep the App Secret off the page and out of a public repository.
+| Name | In | Required | Description |
+| --- | --- | --- | --- |
+| `Content-Type` | header | yes | `application/json`. |
+| `appId` | body | yes | String, such as `"10001"`. A JSON number is rejected. |
+| `appSecret` | body | for a new token | Server only. Do not send it again when refreshing. |
+| `grantType` | body | yes | `client_credentials` or `refresh_token`. |
+| `refreshToken` | body | for a refresh | The refresh token from the previous response. |
 
-## Request
+## Example: client credentials
 
 ```bash
 curl -X POST "https://api.gochina.cool/v1/token" \
   -H "Content-Type: application/json" \
   -d '{"appId":"10001","appSecret":"your_app_secret","grantType":"client_credentials"}'
 ```
-
-When `expiresInSeconds` has elapsed, refresh the access token. Do not send the App Secret again:
-
-```bash
-curl -X POST "https://api.gochina.cool/v1/token" \
-  -H "Content-Type: application/json" \
-  -d '{"appId":"10001","grantType":"refresh_token","refreshToken":"your_refresh_token"}'
-```
-
-`appId`, `appSecret`, `grantType`, and `refreshToken` are JSON strings. `grantType` is `client_credentials` or `refresh_token`. Any other value returns HTTP 400 with `error` set to `invalid_grant_type`.
-
-`GET /v1/token` does not accept a secret. It returns HTTP 401.
-
-## Response
-
-A successful call is a flat JSON object:
 
 ```json
 {
@@ -48,23 +38,44 @@ A successful call is a flat JSON object:
 }
 ```
 
-| Field | Meaning |
-| --- | --- |
-| `accessToken` | Send this as `Authorization: Bearer`. |
-| `expiresInSeconds` | Seconds until the access token expires. |
-| `refreshToken` | Use this with `grantType` `refresh_token`. |
-| `refreshTokenExpiresInSeconds` | Seconds until the refresh token expires. |
-| `tokenType` | `Bearer`. |
-| `apiVersion` | `v1`. |
+### Response fields
 
-Later server requests use:
+| Field | Type | Content |
+| --- | --- | --- |
+| `apiVersion` | string | Contract version. Always `v1`. |
+| `accessToken` | string | Send this value on later server calls. |
+| `expiresInSeconds` | integer | Seconds until `accessToken` expires, counted from this response. Not a unix timestamp. |
+| `refreshToken` | string | Send this value to `grantType` `refresh_token`. |
+| `refreshTokenExpiresInSeconds` | integer | Seconds until `refreshToken` expires, counted from this response. |
+| `tokenType` | string | Always `Bearer`. |
+
+Send the access token on later server calls:
 
 ```http
 Authorization: Bearer your_access_token
 ```
 
-`GET /v1/tours`, `GET /v1/tours/{tourCode}`, `GET /v1/prices`, and `GET /v1/currencies` accept only that header. `X-Publishable-Key` on those paths returns HTTP 401. The card uses the Publishable Key. See [Embed a card](/manual/embed/card/).
+`GET /v1/tours`, `GET /v1/tours/{tourCode}`, `GET /v1/prices`, and `GET /v1/currencies` accept only that header. `X-Publishable-Key` on those paths returns HTTP 401. The card uses the Publishable Key. See [Tour card](/manual/embed/card/).
 
-## Limits
+## Example: refresh
 
-IP allow lists are on unless GoChina turns them off for that application. A rejected address returns HTTP 403 and does not describe the allow list. An enabled application is required. Token, list, detail, currency, and price calls are limited to 10 requests per second for each application. HTTP 429 includes `Retry-After` in seconds.
+When `expiresInSeconds` has elapsed, exchange the refresh token. Do not send the App Secret again.
+
+```bash
+curl -X POST "https://api.gochina.cool/v1/token" \
+  -H "Content-Type: application/json" \
+  -d '{"appId":"10001","grantType":"refresh_token","refreshToken":"your_refresh_token"}'
+```
+
+The success body has the same fields as the client-credentials response.
+
+## Errors
+
+| Condition | HTTP | Body | Correction |
+| --- | --- | --- | --- |
+| `grantType` is any other value | 400 | `error` `invalid_grant_type` | Send `client_credentials` or `refresh_token`. |
+| The id or secret does not match, or the refresh token is unknown | 401 | `available` `false` | The body does not say which field failed. |
+| The application is disabled, or the caller address is not allowed | 403 | `available` `false` | The body does not describe the allow list. |
+| More than 10 requests per second for this application | 429 | `available` `false` | Wait for `Retry-After`, in seconds. |
+
+IP allow lists apply unless GoChina turns them off for that application. The application must be enabled.

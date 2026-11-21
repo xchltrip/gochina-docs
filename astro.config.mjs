@@ -11,6 +11,10 @@ export default defineConfig({
   site: isPreview ? 'https://docs.gochina.cool' : 'https://docs.gochina.cool',
   trailingSlash: 'always',
   server: { host: true },
+  redirects: {
+    '/manual/errors/responses/': '/manual/qa/questions/',
+    '/manual/glossary/terms/': '/manual/getting-started/start/',
+  },
   markdown: { processor: unified({ remarkPlugins: [remarkHeadingId] }) },
   integrations: [
     starlight({
@@ -35,21 +39,19 @@ export default defineConfig({
       ],
       components: isPreview ? { Banner: './src/components/PreviewBanner.astro' } : {},
       sidebar: [
-        { label: 'Start here', link: '/manual/getting-started/start/' },
-        { label: 'Q&A', link: '/manual/qa/questions/' },
-        { label: 'Access tokens', link: '/manual/authentication/token/' },
+        { label: 'Overview', link: '/manual/getting-started/start/' },
         {
-          label: 'Tours',
+          label: 'API',
           items: [
-            { label: 'Read tours', link: '/manual/tours/read/' },
-            { label: 'Reference prices', link: '/manual/tours/prices/' },
+            { label: 'Authentication', link: '/manual/authentication/token/' },
+            { label: 'Tours', link: '/manual/tours/read/' },
+            { label: 'Prices', link: '/manual/tours/prices/' },
+            { label: 'Currencies', link: '/manual/currencies/codes/' },
+            { label: 'Tour card', link: '/manual/embed/card/' },
           ],
         },
-        { label: 'Currency codes', link: '/manual/currencies/codes/' },
-        { label: 'Embed a card', link: '/manual/embed/card/' },
-        { label: 'Errors and limits', link: '/manual/errors/responses/' },
-        { label: 'Version v1', link: '/manual/versions/v1/' },
-        { label: 'Terms', link: '/manual/glossary/terms/' },
+        { label: 'Q&A', link: '/manual/qa/questions/' },
+        { label: 'Versions', link: '/manual/versions/v1/' },
       ],
     }),
   ],

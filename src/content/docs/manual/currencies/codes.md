@@ -1,56 +1,77 @@
 ---
-title: Currency codes
+title: Currencies
 description: ISO 4217 codes GoChina can convert from US dollars.
 sidebar:
   order: 1
 ---
 
-## What this page is for
+A currency identifier is the ISO 4217 alphabetic code. Requests and responses use that three-letter code. Case does not matter on input. Responses use uppercase. This page is the only currency list. [Prices](/manual/tours/prices/) and [Tour card](/manual/embed/card/) link here.
 
-A currency identifier is the ISO 4217 alphabetic code. Requests and responses use that three-letter code. Case does not matter on input. Responses use uppercase.
+`GET /v1/currencies` returns the convertible codes. `USD` is the base currency and is not one of the rows. Reference prices are always stored in US dollars. Do not send `USD` to `currency` or `data-currency`.
 
-This page is the only currency list. [Reference prices](/manual/tours/prices/) and [Embed a card](/manual/embed/card/) link here instead of copying it.
+## Parameters
 
-## Rules
+| Name | In | Required | Description |
+| --- | --- | --- | --- |
+| `Authorization` | header | yes | Bearer token. A Publishable Key returns HTTP 401. |
 
-| Rule | Meaning |
-| --- | --- |
-| Identifier | Three letters, such as `EUR`. |
-| Rejected input | Numeric codes, currency symbols, and currency names. |
-| Base currency | `USD`, with 2 minor units. Reference prices are always stored in US dollars. Do not send `USD` to `currency` or `data-currency`. |
-| Minor units | Amounts are decimal strings, rounded half up to this many places. `JPY`, `KRW`, and `VND` have no decimal places. |
-| Unknown code | A code that is not in the table below returns HTTP 400 and `error` `unsupported_currency` on the price API. |
-| Missing rate | A listed code with no rate that day still returns the US dollar prices. That currency has `conversionStatus` `rate_unavailable`. |
+This call takes no query parameters. Any query parameter returns HTTP 400 and `error` `invalid_parameter`.
 
-`GET /v1/currencies` returns the same rows, in this order, with `currency`, `currencyName`, and `minorUnits`. It requires a bearer token. `baseCurrency` is `USD` and is not one of the rows.
+## Example request
 
-v1 does not list every ISO 4217 code. These codes are not accepted: `SEK`, `NOK`, `DKK`, `BRL`, `MXN`, `ZAR`, `TRY`, `PLN`, `ILS`, `QAR`, `KWD`, `BHD`.
+```bash
+curl "https://api.gochina.cool/v1/currencies" \
+  -H "Authorization: Bearer your_access_token"
+```
 
-## Convertible currencies
+## Example response
 
-| `currency` | `currencyName` | `minorUnits` |
+The array below is the complete v1 list, in response order. Amounts elsewhere are rounded half up to `minorUnits` decimal places.
+
+### Response fields
+
+| Field | Type | Content |
 | --- | --- | --- |
-| `AED` | UAE Dirham | 2 |
-| `AUD` | Australian Dollar | 2 |
-| `CAD` | Canadian Dollar | 2 |
-| `CHF` | Swiss Franc | 2 |
-| `CNY` | Chinese Yuan | 2 |
-| `EUR` | Euro | 2 |
-| `GBP` | British Pound | 2 |
-| `HKD` | Hong Kong Dollar | 2 |
-| `IDR` | Indonesian Rupiah | 2 |
-| `INR` | Indian Rupee | 2 |
-| `JPY` | Japanese Yen | 0 |
-| `KRW` | South Korean Won | 0 |
-| `MOP` | Macanese Pataca | 2 |
-| `MYR` | Malaysian Ringgit | 2 |
-| `NZD` | New Zealand Dollar | 2 |
-| `PHP` | Philippine Peso | 2 |
-| `RUB` | Russian Ruble | 2 |
-| `SAR` | Saudi Riyal | 2 |
-| `SGD` | Singapore Dollar | 2 |
-| `THB` | Thai Baht | 2 |
-| `TWD` | New Taiwan Dollar | 2 |
-| `VND` | Vietnamese Dong | 0 |
+| `apiVersion` | string | Contract version. Always `v1`. |
+| `baseCurrency` | string | Always `USD`. Not one of the rows in `currencies`. |
+| `currencies` | array of object | Convertible codes, in the order below. |
+| `currencies[].currency` | string | ISO 4217 alphabetic code, uppercase. |
+| `currencies[].currencyName` | string | English currency name. |
+| `currencies[].minorUnits` | integer | Decimal places for an amount in this currency. `JPY`, `KRW`, and `VND` are `0`. Every other row is `2`. |
+
+```json
+{
+  "apiVersion": "v1",
+  "baseCurrency": "USD",
+  "currencies": [
+    { "currency": "AED", "currencyName": "UAE Dirham", "minorUnits": 2 },
+    { "currency": "AUD", "currencyName": "Australian Dollar", "minorUnits": 2 },
+    { "currency": "CAD", "currencyName": "Canadian Dollar", "minorUnits": 2 },
+    { "currency": "CHF", "currencyName": "Swiss Franc", "minorUnits": 2 },
+    { "currency": "CNY", "currencyName": "Chinese Yuan", "minorUnits": 2 },
+    { "currency": "EUR", "currencyName": "Euro", "minorUnits": 2 },
+    { "currency": "GBP", "currencyName": "British Pound", "minorUnits": 2 },
+    { "currency": "HKD", "currencyName": "Hong Kong Dollar", "minorUnits": 2 },
+    { "currency": "IDR", "currencyName": "Indonesian Rupiah", "minorUnits": 2 },
+    { "currency": "INR", "currencyName": "Indian Rupee", "minorUnits": 2 },
+    { "currency": "JPY", "currencyName": "Japanese Yen", "minorUnits": 0 },
+    { "currency": "KRW", "currencyName": "South Korean Won", "minorUnits": 0 },
+    { "currency": "MOP", "currencyName": "Macanese Pataca", "minorUnits": 2 },
+    { "currency": "MYR", "currencyName": "Malaysian Ringgit", "minorUnits": 2 },
+    { "currency": "NZD", "currencyName": "New Zealand Dollar", "minorUnits": 2 },
+    { "currency": "PHP", "currencyName": "Philippine Peso", "minorUnits": 2 },
+    { "currency": "RUB", "currencyName": "Russian Ruble", "minorUnits": 2 },
+    { "currency": "SAR", "currencyName": "Saudi Riyal", "minorUnits": 2 },
+    { "currency": "SGD", "currencyName": "Singapore Dollar", "minorUnits": 2 },
+    { "currency": "THB", "currencyName": "Thai Baht", "minorUnits": 2 },
+    { "currency": "TWD", "currencyName": "New Taiwan Dollar", "minorUnits": 2 },
+    { "currency": "VND", "currencyName": "Vietnamese Dong", "minorUnits": 0 }
+  ]
+}
+```
+
+Numeric codes, currency symbols, and currency names are rejected. A three-letter code that is not in this list returns HTTP 400 and `error` `unsupported_currency` on [Prices](/manual/tours/prices/). A listed code with no rate that day still returns the US dollar prices, and that currency has `conversionStatus` `rate_unavailable`.
+
+v1 does not accept every ISO 4217 code. These codes are not accepted: `SEK`, `NOK`, `DKK`, `BRL`, `MXN`, `ZAR`, `TRY`, `PLN`, `ILS`, `QAR`, `KWD`, `BHD`.
 
 Adding or removing a code changes this page, `GET /v1/currencies`, and the OpenAPI enum on the same day.

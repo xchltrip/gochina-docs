@@ -18,10 +18,10 @@ content:
     label: 手册
     type: group
     items:
-      - name: glossary
-        label: 术语
+      - name: getting-started
+        label: 开始使用
         type: collection
-        path: src/content/docs/manual/glossary
+        path: src/content/docs/manual/getting-started
         format: yaml-frontmatter
         subfolders: false
         filename:
@@ -41,19 +41,6 @@ content:
             label: 正文（Markdown）
             type: code
             options: { format: markdown }
-
-      - name: getting-started
-        label: 开始使用
-        type: collection
-        path: src/content/docs/manual/getting-started
-        format: yaml-frontmatter
-        subfolders: false
-        filename:
-          template: "article-{year}{month}{day}.md"
-          field: create
-        operations: { delete: false, rename: false }
-        view: { primary: title, fields: [title, description] }
-        fields: *docFields
 
       - name: qa
         label: 问答
@@ -108,22 +95,9 @@ content:
         fields: *docFields
 
       - name: embed
-        label: 嵌入卡片
+        label: 线路卡片
         type: collection
         path: src/content/docs/manual/embed
-        format: yaml-frontmatter
-        subfolders: false
-        filename:
-          template: "article-{year}{month}{day}.md"
-          field: create
-        operations: { delete: false, rename: false }
-        view: { primary: title, fields: [title, description] }
-        fields: *docFields
-
-      - name: errors
-        label: 错误
-        type: collection
-        path: src/content/docs/manual/errors
         format: yaml-frontmatter
         subfolders: false
         filename:
