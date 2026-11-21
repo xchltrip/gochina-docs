@@ -21,6 +21,7 @@ export default defineConfig({
         alt: 'GoChina.cool',
         replacesTitle: true,
       },
+      customCss: ['./src/styles/brand.css'],
       favicon: '/favicon.svg',
       locales: { root: { label: 'English', lang: 'en' } },
       lastUpdated: true,
